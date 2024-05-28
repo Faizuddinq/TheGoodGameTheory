@@ -1,4 +1,3 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import BeerList from './components/BeerList';
 
@@ -6,12 +5,25 @@ function App() {
   const [beers, setBeers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('id');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetch('https://api.sampleapis.com/beers/ale')
-      .then(response => response.json())
-      .then(data => setBeers(data))
-      .catch(error => console.error('Error fetching data:', error));
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setBeers(data);
+        setLoading(false);
+      })
+      .catch(error => {
+        setError(error.message);
+        setLoading(false);
+      });
   }, []);
 
   const handleSearch = (e) => {
@@ -30,7 +42,7 @@ function App() {
     }
   });
 
-  const filteredBeers = beers.filter(beer =>
+  const filteredBeers = sortedBeers.filter(beer =>
     beer.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -44,7 +56,13 @@ function App() {
         onChange={handleSearch}
         className="border border-gray-300 rounded px-3 py-2 mb-8"
       />
-      <BeerList beers={filteredBeers} />
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p>Error: {error}</p>
+      ) : (
+        <BeerList beers={filteredBeers} />
+      )}
     </div>
   );
 }
